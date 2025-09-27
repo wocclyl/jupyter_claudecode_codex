@@ -1,0 +1,6 @@
+# Lightweight alternatives to reduce image size  
+jupyterlab==4.4.5
+tornado==6.2
+ipywidgets
+uv==0.8.4
+gradio
