@@ -1,0 +1,2 @@
+# jupyter_claudecode_codex
+一个功能完整的AI驱动开发环境，集成了多种主流AI代码助手和开发工具。基于Docker容器化部署，开箱即用。
