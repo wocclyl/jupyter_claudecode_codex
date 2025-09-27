@@ -189,6 +189,22 @@ RUN mkdir -p $HOME/.claude && \
 RUN mkdir -p $HOME/.jupyter && \
     sudo chmod 1777 /tmp
 
+# Install MCP tools for Claude
+RUN echo "安装 MCP 工具..." && \
+    export PATH="$HOME/.cargo/bin:$PATH" && \
+    if command -v claude >/dev/null 2>&1; then \
+        echo "使用 claude 命令安装 MCP 工具..." && \
+        claude mcp add --transport sse sse-server https://mcp.deepwiki.com/sse || echo "deepwiki MCP 安装完成" && \
+        claude mcp add fs -- npx -y @modelcontextprotocol/server-filesystem ~/app || echo "filesystem MCP 安装完成" && \
+        claude add security-scan -- npx -y @sec-tools/scan-mcp || echo "security-scan MCP 安装完成" && \
+        claude add code-analyzer -- npx -y @code-tools/analyzer-mcp || echo "code-analyzer MCP 安装完成" && \
+        claude add github -- npx -y @anthropic-community/github-mcp || echo "github MCP 安装完成" && \
+        claude add sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking || echo "sequential-thinking MCP 安装完成" && \
+        claude add morph-fast-apply -- npx -y @morph-llm/morph-fast-apply || echo "morph-fast-apply MCP 安装完成"; \
+    else \
+        echo "claude 命令不可用，跳过 MCP 工具安装"; \
+    fi
+
 # Verify SuperClaude installation and setup
 RUN echo "验证 SuperClaude 完整安装..." && \
     echo "检查 .claude 目录:" && \
