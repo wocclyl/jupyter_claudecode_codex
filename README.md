@@ -15,7 +15,7 @@ short_description: 功能完整的AI驱动开发环境，集成多种主流AI代
 
 ## 🚀 核心特性
 
-- **多AI引擎支持**: 集成Claude Code、通义千问、OpenAI Codex、Google Gemini等主流AI代码助手
+- **多AI引擎支持**: 集成Claude Code、通义千问、OpenAI Codex、Google Gemini、GitHub Copilot、Neovate Code等主流AI代码助手
 - **SuperClaude框架**: 完整安装SuperClaude框架v4.1.5，包含:
   - 15个专业AI代理（agents）
   - 7种行为模式（modes）
@@ -97,6 +97,8 @@ export PLAYWRIGHT_HEADLESS=true
 - **Google Gemini CLI** (@google/gemini-cli)
 - **通义千问** (@qwen-code/qwen-code)
 - **OpenAI Codex** (@openai/codex)
+- **GitHub Copilot CLI** (@github/copilot)
+- **Neovate Code** (@neovate/code)
 - **腾讯CodeBuddy** (@tencent-ai/codebuddy-code)
 - **iFlow AI CLI** (@iflow-ai/iflow-cli)
 
@@ -146,6 +148,8 @@ python -c "import SuperClaude; print('SuperClaude已安装')"
 # 检查其他AI工具
 gemini --version
 qwen --version
+github-copilot --version
+neovate --version
 
 # 查看SuperClaude配置
 ls -la ~/.claude/
@@ -185,7 +189,13 @@ docker logs -f jupyter_claudecode_codex
 
 ## 📝 更新日志
 
-### v0.0.1 (最新)
+### v0.0.2 (最新)
+- ✅ 新增GitHub Copilot CLI支持 (@github/copilot)
+- ✅ 新增Neovate Code AI助手 (@neovate/code)
+- ✅ 扩展AI代码助手生态系统
+- ✅ 优化多AI引擎协作能力
+
+### v0.0.1
 - ✅ 集成SuperClaude框架v4.1.5
 - ✅ 添加8个MCP服务器支持
 - ✅ 新增uv包管理器支持

@@ -72,6 +72,8 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | b
     npm install -g @qwen-code/qwen-code@latest --timeout=300000 && \
     npm install -g @openai/codex --timeout=300000 --registry=https://registry.npmjs.org/ && \
     npm install -g @iflow-ai/iflow-cli@latest --timeout=300000 --registry=https://registry.npmjs.org/ && \
+    npm install -g @github/copilot --timeout=300000 --registry=https://registry.npmjs.org/ && \
+    npm install -g @neovate/code@latest --timeout=300000 --registry=https://registry.npmjs.org/ && \
     bash -c 'source $NVM_DIR/nvm.sh && npm install -g @tencent-ai/codebuddy-code --timeout=300000 --registry=https://registry.npmjs.org/' && \
     npm cache clean --force && \
     rm -rf /tmp/* /var/tmp/* || true
@@ -196,9 +198,6 @@ RUN echo "安装 MCP 工具..." && \
         echo "使用 claude 命令安装 MCP 工具..." && \
         claude mcp add --transport sse sse-server https://mcp.deepwiki.com/sse || echo "deepwiki MCP 安装完成" && \
         claude mcp add fs -- npx -y @modelcontextprotocol/server-filesystem ~/app || echo "filesystem MCP 安装完成" && \
-        claude add security-scan -- npx -y @sec-tools/scan-mcp || echo "security-scan MCP 安装完成" && \
-        claude add code-analyzer -- npx -y @code-tools/analyzer-mcp || echo "code-analyzer MCP 安装完成" && \
-        claude add github -- npx -y @anthropic-community/github-mcp || echo "github MCP 安装完成" && \
         claude add sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking || echo "sequential-thinking MCP 安装完成" && \
         claude add morph-fast-apply -- npx -y @morph-llm/morph-fast-apply || echo "morph-fast-apply MCP 安装完成"; \
     else \
