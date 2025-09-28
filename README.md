@@ -74,6 +74,42 @@ docker run -d -p 8889:8888 --name jupyter_claudecode_codex jupyter_claudecode_co
 - **Jupyter Lab**: http://localhost:8889 (token: o3sky2025)
 - **终端访问**: 在JupyterLab中打开Terminal即可使用所有AI工具
 
+#### claude 
+
+![image-20250928102432829](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928102432829.png)
+
+#### Rovo Dev
+
+![image-20250928103248686](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928103248686.png)
+
+#### ccr code
+
+![image-20250928102559028](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928102559028.png)
+
+#### gemini
+
+![image-20250928102642345](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928102642345.png)
+
+#### qwen
+
+![image-20250928102734367](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928102734367.png)
+
+#### codex
+
+![image-20250928102818425](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928102818425.png)
+
+#### iflow
+
+![image-20250928102905282](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928102905282.png)
+
+#### copilot
+
+![image-20250928103013020](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928103013020.png)
+
+#### neovate
+
+![image-20250928103110623](https://mypicture-1258720957.cos.ap-nanjing.myqcloud.com/image-20250928103110623.png)
+
 ### 环境变量配置
 
 为了充分使用MCP服务器功能，建议配置以下环境变量：
