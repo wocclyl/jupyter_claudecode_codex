@@ -4,7 +4,7 @@ FROM python:3.11-slim
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Asia/Shanghai
 
-# Install essential utilities only (optimized for size)
+# Install essential utilities and browser dependencies (optimized for size)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
@@ -18,6 +18,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     bzip2 \
     libsndfile1 \
+    # Playwright browser automation dependencies
+    xvfb \
+    libfontenc1 \
+    libunwind8 \
+    libxfont2 \
+    x11-xkb-utils \
+    xauth \
+    xfonts-base \
+    xfonts-encodings \
+    xfonts-utils \
+    xserver-common \
+    # Additional browser runtime dependencies
+    libglib2.0-0 \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libatspi2.0-0 \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Add cloudflare gpg key
@@ -102,70 +132,66 @@ USER user
 # Install Python packages using pip only (optimized)
 RUN pip install --no-cache-dir --upgrade pip
 
-# Copy requirements and install Python packages with optimizations
+# Copy requirements and install Python packages with optimizations (single installation)
 COPY --chown=user requirements.txt $HOME/app/
 RUN pip install --no-cache-dir --no-compile --upgrade -r requirements.txt && \
     find /usr/local -name "*.pyc" -delete && \
     find /usr/local -name "__pycache__" -type d -exec rm -rf {} + || true
 
+# Install Playwright browsers (Python version) - AFTER requirements
+RUN python -m playwright install chromium chromium-headless-shell firefox webkit
+
+# Install Playwright system dependencies as root (with retry logic and timeout handling)
+USER root
+RUN for i in 1 2 3 4 5; do \
+        echo "Attempt $i: Updating apt cache..." && \
+        apt-get update -o Acquire::http::Timeout=30 -o Acquire::Retries=3 && \
+        echo "Installing Playwright dependencies..." && \
+        python -m playwright install-deps && \
+        echo "Playwright dependencies installed successfully!" && \
+        break || { \
+            echo "❌ Attempt $i failed. Waiting 10 seconds before retry..." >&2; \
+            sleep 10; \
+            if [ $i -eq 5 ]; then \
+                echo "⚠️ All attempts failed. Continuing without Playwright system deps..." >&2; \
+                echo "You may need to install deps manually or use a different network." >&2; \
+            fi; \
+        }; \
+    done && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+USER user
+
+# Install Node.js Playwright and browsers
+RUN . /home/user/.nvm/nvm.sh && \
+    npm install -g playwright@latest && \
+    npx playwright install chromium && \
+    npm cache clean --force
+
 # Install uv for Python package management (required for Serena MCP server)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> $HOME/.bashrc
 
-# Install SuperClaude via pip and configure it
+# Install SuperClaude using official method
 RUN pip install --no-cache-dir SuperClaude && \
     pip install --no-cache-dir --upgrade SuperClaude && \
-    echo "正在安装 SuperClaude..." && \
-    echo "检查 SuperClaude 安装情况..." && \
-    pip show SuperClaude && \
-    echo "查找 SuperClaude 可执行文件..." && \
-    find /usr/local -name "*superclaude*" -o -name "*SuperClaude*" 2>/dev/null || echo "未找到可执行文件" && \
-    echo "检查 Python 模块..." && \
-    python -c "import SuperClaude; print('SuperClaude 模块导入成功')" || echo "模块导入失败"
+    printf "all\nall\ny\ny\n" | python -m superclaude install && \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.bashrc
 
-# Configure SuperClaude with full installation including all MCP servers and components
-RUN echo "配置 SuperClaude 完整安装..." && \
-    export PATH="$HOME/.cargo/bin:$PATH" && \
-    if command -v SuperClaude >/dev/null 2>&1; then \
-        echo "使用 SuperClaude 命令配置..." && \
-        printf "all\nall\ny\ny\n" | SuperClaude install || echo "SuperClaude install 完成"; \
-    elif command -v superclaude >/dev/null 2>&1; then \
-        echo "使用 superclaude 命令配置..." && \
-        printf "all\nall\ny\ny\n" | superclaude install || echo "superclaude install 完成"; \
-    elif python -c "import SuperClaude" 2>/dev/null; then \
-        echo "通过 Python 模块配置..." && \
-        printf "all\nall\ny\ny\n" | python -m SuperClaude install || echo "Python 模块配置完成"; \
-    else \
-        echo "未找到可用的 SuperClaude 命令"; \
-    fi
-
-# 切换到 root 用户创建全局脚本
-USER root
-
-# 创建 superclaude 命令别名和可执行脚本
-RUN echo "创建 superclaude 命令..." && \
-    if sudo -u user python -c "import SuperClaude" 2>/dev/null; then \
-        echo '#!/bin/bash' > /usr/local/bin/superclaude && \
-        echo 'python -m SuperClaude "$@"' >> /usr/local/bin/superclaude && \
-        chmod +x /usr/local/bin/superclaude && \
-        echo "superclaude 脚本创建成功"; \
-    else \
-        echo "SuperClaude 模块不可用，无法创建脚本"; \
-    fi
-
-# 切换回 user 用户
-USER user
-
-# 验证安装结果
-RUN echo "验证 SuperClaude 安装..." && \
-    echo "PATH: $PATH" && \
-    which superclaude || echo "superclaude 不在 PATH 中" && \
-    ls -la /usr/local/bin/superclaude 2>/dev/null || echo "/usr/local/bin/superclaude 不存在" && \
-    superclaude --version 2>/dev/null || echo "superclaude --version 失败" && \
-    python -c "import SuperClaude; print('SuperClaude 版本:', getattr(SuperClaude, '__version__', '未知'))" 2>/dev/null || echo "无法获取版本信息"
+# Update PATH to include SuperClaude scripts
+ENV PATH="/home/user/.local/bin:$PATH"
 
 # Copy the current directory contents into the container
 COPY --chown=user . $HOME/app
+
+# Create .claude directory and set proper permissions for SuperClaude
+RUN mkdir -p $HOME/.claude && \
+    chown -R user:user $HOME/.claude && \
+    chmod -R 755 $HOME/.claude
+
+# Create jupyter config directory and set permissions
+RUN mkdir -p $HOME/.jupyter && \
+    sudo chmod 1777 /tmp
 
 # Scripts no longer needed - using direct Jupyter startup
 
@@ -173,6 +199,8 @@ COPY --chown=user . $HOME/app
 ENV MORPH_API_KEY="" \
     TAVILY_API_KEY="" \
     PLAYWRIGHT_HEADLESS=true \
+    PLAYWRIGHT_BROWSERS_PATH=/home/user/.cache/ms-playwright \
+    DISPLAY=:99 \
     PYTHONUNBUFFERED=1 \
     GRADIO_ALLOW_FLAGGING=never \
     GRADIO_NUM_PORTS=1 \
@@ -191,6 +219,19 @@ RUN mkdir -p $HOME/.claude && \
 RUN mkdir -p $HOME/.jupyter && \
     sudo chmod 1777 /tmp
 
+# Create xvfb startup script for browser automation
+USER root
+RUN echo '#!/bin/bash' > /usr/local/bin/start-with-xvfb.sh && \
+    echo 'echo "Starting Xvfb virtual display server..."' >> /usr/local/bin/start-with-xvfb.sh && \
+    echo 'Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset &' >> /usr/local/bin/start-with-xvfb.sh && \
+    echo 'export DISPLAY=:99' >> /usr/local/bin/start-with-xvfb.sh && \
+    echo 'echo "Xvfb started on display :99"' >> /usr/local/bin/start-with-xvfb.sh && \
+    echo 'sleep 2' >> /usr/local/bin/start-with-xvfb.sh && \
+    echo 'exec "$@"' >> /usr/local/bin/start-with-xvfb.sh && \
+    chmod +x /usr/local/bin/start-with-xvfb.sh
+
+USER user
+
 # Install MCP tools for Claude
 RUN echo "安装 MCP 工具..." && \
     export PATH="$HOME/.cargo/bin:$PATH" && \
@@ -204,19 +245,11 @@ RUN echo "安装 MCP 工具..." && \
         echo "claude 命令不可用，跳过 MCP 工具安装"; \
     fi
 
-# Verify SuperClaude installation and setup
-RUN echo "验证 SuperClaude 完整安装..." && \
-    echo "检查 .claude 目录:" && \
-    ls -la $HOME/.claude/ 2>/dev/null || echo ".claude 目录为空或不存在" && \
-    echo "检查 CLAUDE.md 文件:" && \
-    ls -la $HOME/.claude/CLAUDE.md 2>/dev/null || echo "CLAUDE.md 不存在" && \
-    echo "检查 MCP 服务器配置:" && \
-    ls -la $HOME/.claude/mcp/ 2>/dev/null || echo "MCP 配置目录不存在" && \
-    echo "SuperClaude 版本信息:" && \
-    python -c "import SuperClaude; print('SuperClaude 版本:', getattr(SuperClaude, '__version__', '未知'))" 2>/dev/null || echo "无法获取版本信息"
+# Verify SuperClaude installation
+RUN python -c "import superclaude; print('SuperClaude 安装成功，版本:', getattr(superclaude, '__version__', '未知'))"
 
-# Directly start Jupyter Lab without supervisord overhead  
-CMD ["bash", "-c", "python -m jupyterlab \
+# Start Jupyter Lab with Xvfb for browser automation support
+CMD ["/usr/local/bin/start-with-xvfb.sh", "bash", "-c", "python -m jupyterlab \
      --ip 0.0.0.0 \
      --port 8888 \
      --no-browser \
